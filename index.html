@@ -226,7 +226,10 @@
     // Supabase (ganti Appwrite)
     const SUPABASE_URL = 'https://umzekpsayclptmhgzotf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtemVrcHNheWNscHRtaGd6b3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NjMwNTAsImV4cCI6MjA3ODIzOTA1MH0.FbV1ESJrckyJ4kT4hR3DKh01GHeHoCTEfU5kgPWmIRs';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // **PEMBETULAN:** Namakan klien 'supabaseClient' untuk elak konflik
+    // Objek 'supabase' global datang dari skrip CDN
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Kod Appwrite (dibuang)
     /*
@@ -443,7 +446,8 @@
     async function loadActivities(){
       try{
         // Guna Supabase.from().select() untuk ambil semua rekod
-        const { data: allDocs, error } = await supabase
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { data: allDocs, error } = await supabaseClient
           .from('aktiviti')
           .select('*')
           .order('tarikh', { ascending: true }); // 'order' ganti Appwrite Query.orderAsc
@@ -546,7 +550,8 @@
 
       try{
         // Ganti dengan Supabase delete
-        const { error } = await supabase
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
           .from('aktiviti')
           .delete()
           .eq('id', id); // 'id' adalah nama kolum primary key
@@ -576,7 +581,8 @@
       };
       try{
         // Ganti dengan Supabase insert
-        const { error } = await supabase
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
           .from('aktiviti')
           .insert([payload]); // Supabase menjangkakan array of objects
           
@@ -626,7 +632,8 @@
       };
       try{
         // Ganti dengan Supabase update
-        const { error } = await supabase
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
           .from('aktiviti')
           .update(updated)
           .eq('id', id); // 'id' adalah nama kolum primary key
