@@ -1,362 +1,666 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Temujanji ICT | Dashboard Admin</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .loader { border-top-color: #2563eb; animation: spinner 1s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .toast { transform: translateX(100%); transition: transform 0.3s ease-out; }
-        .toast.show { transform: translateX(0); }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pelaporan Aktiviti Pegawai</title>
+
+  <link rel="icon" href="assets/img/logo-kpm.png" type="image/png"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <link rel="stylesheet" href="assets/css/styles.css"/>
 </head>
-<body class="text-slate-800">
+<body class="bg-gray-50">
+  <div class="max-w-4xl mx-auto p-4 md:p-6">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="stickyHeader" class="sticky-header">
+      <header class="pb-4 bg-gray-50">
+        <div class="flex items-start gap-3 justify-between">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Pelaporan Aktiviti Pegawai</h1>
+            <p class="text-gray-500">REKOD dan RUMUSAN aktiviti pegawai secara maya.</p>
+          </div>
+          <div class="no-print">
+            <button id="print-btn" class="px-3 py-2 rounded-md border bg-white hover:bg-gray-50 text-sm font-medium">
+              Cetak
+            </button>
+          </div>
+        </div>
 
-    <div class="max-w-6xl mx-auto p-6">
-        
-        <header class="bg-white rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row justify-between items-center border border-slate-100">
-            <div class="flex items-center gap-4">
-                <div class="bg-blue-600 text-white p-3 rounded-xl shadow-md">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        <section class="mt-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm brand-owner">
+          <div class="flex items-start gap-3">
+            <img src="assets/img/malik.png?v=2" alt="Foto Malik Abdullah bin Adanan"
+                 class="brand-photo" loading="lazy"
+                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"/>
+            <div class="brand-avatar hidden">MA</div>
+            <div>
+              <div class="text-sm text-gray-500">Pelaporan milik</div>
+              <div class="text-lg font-semibold text-gray-900">Malik Abdullah bin Adanan</div>
+              <div class="text-sm text-gray-700">Penolong PPD Unit Sumber Teknologi Pendidikan</div>
+              <div class="text-sm text-gray-700">Pejabat Pendidikan Daerah Alor Gajah</div>
+            </div>
+          </div>
+        </section>
+
+        <div class="border-b border-gray-200 mt-5 no-print">
+          <nav class="flex space-x-4" aria-label="Tabs">
+            <button id="tab-add-btn"     class="tab-button active" onclick="switchTab('add')">Tambah Aktiviti</button>
+            <button id="tab-list-btn"    class="tab-button"        onclick="switchTab('list')">Senarai Aktiviti</button>
+            <button id="tab-heatmap-btn" class="tab-button"        onclick="switchTab('heatmap')">Peta Bulan</button>
+          </nav>
+        </div>
+      </header>
+    </div>
+
+    <main class="pt-4">
+      <div>
+        <div id="tab-add" class="tab-content active">
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <form id="add-activity-form" class="space-y-4">
+              <div>
+                <label for="medium_aktiviti" class="block text-sm font-medium text-gray-700">Jenis</label>
+                <select id="medium_aktiviti" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                  <option value="">-- Sila Pilih --</option>
+                  <option value="Bimbingan">Bimbingan</option>
+                  <option value="Aktiviti">Aktiviti</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="tajuk" class="block text-sm font-medium text-gray-700">Tajuk Aktiviti</label>
+                <input type="text" id="tajuk" placeholder="Contoh: Bengkel Robotik" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="tarikh" class="block text-sm font-medium text-gray-700">Tarikh</label>
+                  <input type="date" id="tarikh" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900">Sistem Temujanji ICT</h1>
-                    <p class="text-slate-500 text-sm font-medium">Unit ICT, PPD Alor Gajah</p>
+                  <label for="masa" class="block text-sm font-medium text-gray-700">Tempoh Masa</label>
+                  <input type="text" id="masa" placeholder="Contoh: 2:00 PM - 4:00 PM" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
                 </div>
-            </div>
-            <div class="mt-4 md:mt-0">
-                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200 shadow-sm">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> SYSTEM ONLINE
-                </span>
-            </div>
-        </header>
+              </div>
 
-        <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 mb-8 border border-slate-100 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Carian Sekolah</label>
-            <div class="flex gap-3">
-                <div class="relative flex-1">
-                    <input type="text" id="searchInput" class="w-full pl-4 pr-4 py-4 border border-slate-200 bg-slate-50 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition font-bold text-slate-700 uppercase placeholder:normal-case" placeholder="Masukkan Kod Sekolah (Contoh: MBA0001)">
-                </div>
-                <button onclick="searchSchool()" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg active:scale-95 transform flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    CARI
+              <div>
+                <label for="tempat" class="block text-sm font-medium text-gray-700">Tempat</label>
+                <input type="text" id="tempat" placeholder="Contoh: Makmal Komputer sekolah" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
+              </div>
+
+              <div>
+                <label for="nama_guru" class="block text-sm font-medium text-gray-700">Nama Guru Dibimbing</label>
+                <input type="text" id="nama_guru" placeholder="Contoh: Cikgu Ali bin Abu" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"/>
+              </div>
+
+              <div>
+                <label for="impak_catatan" class="block text-sm font-medium text-gray-700">Impak / Catatan</label>
+                <textarea id="impak_catatan" rows="3" placeholder="Ringkasan impak atau catatan bimbingan" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+              </div>
+
+              <div>
+                <label for="tindak_susul" class="block text-sm font-medium text-gray-700">Tindak Susul</label>
+                <textarea id="tindak_susul" rows="2" placeholder="Apakah tindakan susulan / tugasan seterusnya?" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+              </div>
+
+              <div class="text-right no-print">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                  Simpan Aktiviti
                 </button>
-            </div>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <div id="loadingSpinner" class="hidden py-12 text-center">
-            <div class="inline-block loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-12 w-12 mb-4"></div>
-            <p class="text-slate-400 text-sm font-medium animate-pulse">Sedang mencari data...</p>
+        <div id="tab-list" class="tab-content">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+              <label for="month-jump" class="block text-sm font-medium text-gray-700">Lompat ke Bulan (Tahun Semasa)</label>
+              <select id="month-jump" class="mt-1 block w-64 p-2 border border-gray-300 rounded-md shadow-sm no-print">
+                <option value="__ALL__">Semua Bulan</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-3 no-print">
+              <p id="list-meta" class="text-sm text-gray-500"></p>
+              <button id="toggle-edit-btn" type="button"
+                class="px-3 py-2 rounded-md border text-sm font-medium bg-white hover:bg-gray-50">
+                Mod Edit: <span id="edit-state-label">Terkunci</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="summary-boxes" class="grid grid-cols-2 gap-3 mb-4"></div>
+
+          <div id="activity-list" class="space-y-6">
+            <p class="text-gray-500">Memuatkan aktiviti...</p>
+          </div>
         </div>
 
-        <div id="resultSection" class="hidden space-y-8 fade-in">
-            
-            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="text-3xl font-bold tracking-tight" id="schoolName">Nama Sekolah</h2>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="bg-white/20 px-2 py-1 rounded text-sm font-mono" id="schoolCode">MBA0000</span>
-                        <span class="bg-green-400/20 text-green-100 px-2 py-1 rounded text-xs font-bold border border-green-400/30">AKTIF</span>
-                    </div>
-                </div>
+        <div id="tab-heatmap" class="tab-content">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold text-gray-800">Peta Bulan • Tahun Semasa</h2>
+            <div class="text-xs text-gray-500">Keamatan latar = jumlah relatif bulanan</div>
+          </div>
+
+          <div id="heatmap-legend" class="flex items-center gap-2 text-xs text-gray-600 mb-2">
+            <span>Rendah</span>
+            <div class="h-3 w-8 rounded" style="background: rgba(212,175,55,0.06);"></div>
+            <div class="h-3 w-8 rounded" style="background: rgba(212,175,55,0.14);"></div>
+            <div class="h-3 w-8 rounded" style="background: rgba(212,175,55,0.22);"></div>
+            <div class="h-3 w-8 rounded" style="background: rgba(212,175,55,0.30);"></div>
+            <span>Tinggi</span>
+          </div>
+
+          <div id="heatmap-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto w-full max-w-lg">
+      <div class="bg-white rounded-md shadow-lg border max-h/[80vh] max-h-[80vh] flex flex-col">
+        <h3 class="text-lg font-medium text-gray-900 text-center py-3 border-b">Kemas Kini Aktiviti</h3>
+
+        <div class="px-4 py-3 overflow-auto">
+          <form id="edit-activity-form" class="space-y-4 text-left">
+            <input type="hidden" id="edit-activity-id"/>
+            <div>
+              <label for="edit-medium_aktiviti" class="block text-sm font-medium text-gray-700">Jenis</label>
+              <select id="edit-medium_aktiviti" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                <option value="">-- Sila Pilih --</option>
+                <option value="Bimbingan">Bimbingan</option>
+                <option value="Aktiviti">Aktiviti</option>
+              </select>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition duration-300 relative group">
-                    <div class="absolute top-4 right-4">
-                        <span class="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md uppercase border border-blue-100">GPICT</span>
-                    </div>
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-lg leading-tight">Penyelaras ICT</h3>
-                            <p class="text-xs text-slate-500">Guru Penyelaras Bestari</p>
-                        </div>
-                    </div>
-                    <div class="space-y-1 mb-6">
-                        <p id="gpictName" class="text-lg font-semibold text-slate-800">Tiada Data</p>
-                        <p id="gpictPhone" class="text-sm text-slate-500 font-mono flex items-center gap-2">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            <span>-</span>
-                        </p>
-                    </div>
-                    <div id="gpictActionArea"></div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition duration-300 relative group">
-                    <div class="absolute top-4 right-4">
-                        <span class="text-[10px] font-extrabold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md uppercase border border-purple-100">DELIMa</span>
-                    </div>
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xl">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-lg leading-tight">Admin DELIMa</h3>
-                            <p class="text-xs text-slate-500">Pengurusan ID</p>
-                        </div>
-                    </div>
-                    <div class="space-y-1 mb-6">
-                        <p id="delimaName" class="text-lg font-semibold text-slate-800">Tiada Data</p>
-                        <p id="delimaPhone" class="text-sm text-slate-500 font-mono flex items-center gap-2">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            <span>-</span>
-                        </p>
-                    </div>
-                    <div id="delimaActionArea"></div>
-                </div>
+            <div>
+              <label for="edit-tajuk" class="block text-sm font-medium text-gray-700">Tajuk Aktiviti</label>
+              <input type="text" id="edit-tajuk" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
             </div>
-
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row gap-6 text-sm shadow-inner">
-                <div class="flex-1">
-                    <span class="block font-bold text-[10px] uppercase text-slate-400 tracking-widest mb-1">Pengetua / Guru Besar</span>
-                    <span id="pgbName" class="font-bold text-slate-700 uppercase block text-base">-</span>
-                </div>
-                <div class="hidden md:block w-px bg-slate-200"></div>
-                <div class="flex-1">
-                    <span class="block font-bold text-[10px] uppercase text-slate-400 tracking-widest mb-1">GPK Pentadbiran</span>
-                    <span id="gpk1Name" class="font-bold text-slate-700 uppercase block text-base">-</span>
-                </div>
+            <div>
+              <label for="edit-tarikh" class="block text-sm font-medium text-gray-700">Tarikh</label>
+              <input type="date" id="edit-tarikh" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
             </div>
-
-            <div id="appointmentForm" class="hidden bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden mt-6 ring-4 ring-blue-50/50 scroll-mt-10">
-                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                        📅 Tetapkan Temujanji: <span id="targetRoleDisplay" class="text-blue-600 underline decoration-wavy"></span>
-                    </h3>
-                    <button onclick="closeForm()" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <div class="p-8 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tarikh Cadangan</label>
-                            <input type="date" id="inpDate" class="w-full border border-slate-300 bg-white p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Masa Kehadiran</label>
-                            <input type="time" id="inpTime" class="w-full border border-slate-300 bg-white p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tujuan Bimbingan / Lawatan</label>
-                        <textarea id="inpPurpose" rows="3" class="w-full border border-slate-300 bg-white p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition" placeholder="Sila nyatakan tujuan secara ringkas..."></textarea>
-                    </div>
-                    <div class="pt-2 flex gap-3">
-                        <button onclick="closeForm()" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition">Batal</button>
-                        <button id="btnSend" onclick="submitForm()" class="flex-1 bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 shadow-lg shadow-slate-900/20 transition flex justify-center items-center gap-2">
-                            <span>HANTAR NOTIFIKASI</span>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                        </button>
-                    </div>
-                </div>
+            <div>
+              <label for="edit-masa" class="block text-sm font-medium text-gray-700">Tempoh Masa</label>
+              <input type="text" id="edit-masa" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
             </div>
+            <div>
+              <label for="edit-tempat" class="block text-sm font-medium text-gray-700">Tempat</label>
+              <input type="text" id="edit-tempat" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" required/>
+            </div>
+            <div>
+              <label for="edit-nama_guru" class="block text-sm font-medium text-gray-700">Nama Guru Dibimbing</label>
+              <input type="text" id="edit-nama_guru" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"/>
+            </div>
+            <div>
+              <label for="edit-impak_catatan" class="block text-sm font-medium text-gray-700">Impak / Catatan</label>
+              <textarea id="edit-impak_catatan" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+            </div>
+            <div>
+              <label for="edit-tindak_susul" class="block text-sm font-medium text-gray-700">Tindak Susul</label>
+              <textarea id="edit-tindak_susul" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+            </div>
+          </form>
+        </div>
 
-        </div> </div>
+        <div class="px-4 py-3 border-t bg-gray-50 flex gap-2 sticky bottom-0">
+          <button id="save-changes-btn" class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
+            Simpan Perubahan
+          </button>
+          <button id="close-modal-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-300">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        // --- CONFIGURATION ---
-        const SUPABASE_URL = 'https://soxtjqqrzpbzmzjcicgn.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNveHRqcXFyenBiem16amNpY2duIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NDA1MzIsImV4cCI6MjA3OTExNjUzMn0.P7Wrm-EIzczx653pnr2bniJnMtIrclQeou50IsS184s';
-        const FUNCTION_URL = 'https://soxtjqqrzpbzmzjcicgn.supabase.co/functions/v1/telegram-bot';
+  <script>
+    // Supabase (ganti Appwrite)
+    const SUPABASE_URL = 'https://umzekpsayclptmhgzotf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtemVrcHNheWNscHRtaGd6b3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NjMwNTAsImV4cCI6MjA3ODIzOTA1MH0.FbV1ESJrckyJ4kT4hR3DKh01GHeHoCTEfU5kgPWmIRs';
+    
+    // **PEMBETULAN:** Namakan klien 'supabaseClient' untuk elak konflik
+    // Objek 'supabase' global datang dari skrip CDN
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Kod Appwrite (dibuang)
+    /*
+    const APPWRITE_ENDPOINT   = 'https://app.edidik.my/v1';
+    const APPWRITE_PROJECT_ID = '690e5d22002ee598e7b8';
+    const APPWRITE_DB_ID      = 'planner_db';
+    const APPWRITE_COL_AKTIVITI = 'aktiviti';
+
+    const client = new Appwrite.Client()
+      .setEndpoint(APPWRITE_ENDPOINT)
+      .setProject(APPWRITE_PROJECT_ID);
+
+    const account   = new Appwrite.Account(client);
+    const databases = new Appwrite.Databases(client);
+    const { ID, Query } = Appwrite;
+
+    async function ensureAnonSession(){
+      try{
+        await account.get();
+      }catch(e){
+        await account.createAnonymousSession();
+      }
+    }
+    */
+
+    // Util tarikh (kekal sama)
+    const currentYear = new Date().getFullYear();
+    const msMY = new Intl.DateTimeFormat('ms-MY', { year:'numeric', month:'long' });
+    const monthLabelMY = new Intl.DateTimeFormat('ms-MY', { month:'long' });
+    const fullDate = (d)=> new Date(d).toLocaleDateString('ms-MY', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const monthKey = (d)=> { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
+    const isCurrentYear = (d)=> new Date(d).getFullYear() === currentYear;
+
+    function linkifyText(text) {
+      if (!text || text.trim() === '') {
+        return '-';
+      }
+      const urlRegex = /(https?:\/\/[^\s<]+)/g;
+      return text.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline" style="word-break: break-all;">${url}</a>`;
+      });
+    }
+
+    const activityListEl = document.getElementById('activity-list');
+    const monthJumpEl = document.getElementById('month-jump');
+    const listMetaEl = document.getElementById('list-meta');
+    const summaryBoxesEl = document.getElementById('summary-boxes');
+    const heatmapGridEl = document.getElementById('heatmap-grid');
+
+    let cacheData = [];
+    let monthIndex = [];
+    const SELECTED_KEY_STORAGE = 'selectedMonth_list';
+    const getSelectedMonth = ()=> sessionStorage.getItem(SELECTED_KEY_STORAGE) || monthKey(new Date());
+    const setSelectedMonth = (val)=> sessionStorage.setItem(SELECTED_KEY_STORAGE, val);
+
+    document.getElementById('print-btn').addEventListener('click', ()=> window.print());
+    window.addEventListener('beforeprint', ()=>{ renderActivities(getSelectedMonth()); });
+
+    function buildMonthIndex(rows){
+      const map = new Map();
+      rows.forEach(r=>{
+        if(!r.tarikh || !isCurrentYear(r.tarikh)) return;
+        const key = monthKey(r.tarikh);
+        const label = msMY.format(new Date(r.tarikh));
+        const cur = map.get(key) || { key, label, count:0 };
+        cur.count += 1;
+        map.set(key, cur);
+      });
+      return Array.from(map.values()).sort((a,b)=> a.key.localeCompare(b.key));
+    }
+
+    function renderMonthOptions(selectedKey){
+      monthJumpEl.innerHTML =
+        `<option value="__ALL__">Semua Bulan</option>` +
+        monthIndex.map(mi=>`<option value="${mi.key}">${mi.label} (${mi.count})</option>`).join('');
+      const keys = new Set(['__ALL__', ...monthIndex.map(m=>m.key)]);
+      monthJumpEl.value = keys.has(selectedKey) ? selectedKey : '__ALL__';
+    }
+
+    function renderSummary(totalBimbingan, totalAktiviti, filterKey){
+      const scope = (filterKey==='__ALL__') ? 'Semua Bulan (Tahun Semasa)' : msMY.format(new Date(`${filterKey}-01T00:00:00`));
+      summaryBoxesEl.innerHTML = `
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div class="text-sm text-green-700">Bimbingan • ${scope}</div>
+          <div class="mt-1 text-4xl font-extrabold text-green-800">${totalBimbingan}</div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div class="text-sm text-blue-700">Aktiviti • ${scope}</div>
+          <div class="mt-1 text-4xl font-extrabold text-blue-800">${totalAktiviti}</div>
+        </div>
+      `;
+    }
+
+    function renderActivities(filterKey='__ALL__'){
+      activityListEl.innerHTML = '';
+
+      const base = cacheData.filter(a=> isCurrentYear(a.tarikh));
+      const filtered = base.filter(a => filterKey==='__ALL__' ? true : monthKey(a.tarikh)===filterKey);
+
+      const totalBimbingan = filtered.filter(x=>x.medium_aktiviti==='Bimbingan').length;
+      const totalAktiviti  = filtered.filter(x=>x.medium_aktiviti==='Aktiviti').length;
+      renderSummary(totalBimbingan, totalAktiviti, filterKey);
+
+      if(filtered.length===0){
+        activityListEl.innerHTML = `<p class="text-gray-500">Tiada aktiviti untuk pilihan ini dalam tahun ${currentYear}.</p>`;
+        listMetaEl.textContent = '';
+        return;
+      }
+
+      const groups = new Map();
+      filtered.forEach(a=>{
+        const key = monthKey(a.tarikh);
+        const arr = groups.get(key) || [];
+        arr.push(a);
+        groups.set(key, arr);
+      });
+
+      const orderedKeys = Array.from(groups.keys()).sort((a,b)=> a.localeCompare(b));
+      let totalShown = 0;
+
+      orderedKeys.forEach(key=>{
+        const items = groups.get(key).sort((a,b)=> new Date(a.tarikh) - new Date(b.tarikh));
+        totalShown += items.length;
+
+        const label = msMY.format(new Date(`${key}-01T00:00:00`));
+        const section = document.createElement('section');
+        section.id = `month-${key}`;
+        section.className = 'space-y-4';
+
+        const h = document.createElement('h2');
+        h.className = 'text-xl font-semibold text-gray-800 border-b pb-1';
+        h.textContent = label;
+        section.appendChild(h);
+
+        items.forEach(activity=>{
+          const card = document.createElement('div');
+          card.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-200';
+
+          const tagColor = activity.medium_aktiviti === 'Bimbingan'
+            ? 'bg-sky-100 text-sky-800'
+            : 'bg-green-100 text-green-800';
+          const tagText = activity.medium_aktiviti || 'Lain-lain';
+
+          const actionsHTML = editEnabled ? `
+            <div class="flex items-center space-x-2 no-print">
+              <button onclick='openEditModal(${JSON.stringify(activity)})' class="text-blue-500 hover:text-blue-700 p-1" title="Edit" aria-label="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button onclick="deleteActivity('${activity.id}')" class="text-red-500 hover:text-red-700 p-1" title="Padam" aria-label="Padam">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>` : ``;
+
+          card.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tagColor}">${tagText}</span>
+                <h3 class="font-bold text-lg text-gray-800 mt-2">${activity.tajuk || 'Tiada Tajuk'}</h3>
+                <p class="text-sm text-gray-600">${fullDate(activity.tarikh)}</p>
+                <p class="text-sm text-gray-500">${activity.masa || 'Tempoh masa tidak dinyatakan'}</p>
+                <p class="mt-2 text-gray-700">${activity.tempat || 'Tempat tidak dinyatakan'}</p>
+                <p class="text-sm text-gray-700"><span class="font-medium">Nama Guru:</span> ${activity.nama_guru || '-'}</p>
+                <p class="text-sm text-gray-700" style="overflow-wrap: break-word;"><span class="font-medium">Impak/Catatan:</span> ${linkifyText(activity.impak_catatan)}</p>
+                <p class="text-sm text-gray-700" style="overflow-wrap: break-word;"><span class="font-medium">Tindak Susul:</span> ${linkifyText(activity.tindak_susul)}</p>
+              </div>
+              ${actionsHTML}
+            </div>
+          `;
+
+          section.appendChild(card);
+        });
+
+        activityListEl.appendChild(section);
+      });
+
+      const scope = (filterKey==='__ALL__') ? 'semua bulan tahun semasa' : msMY.format(new Date(`${filterKey}-01T00:00:00`));
+      listMetaEl.textContent = `Dipaparkan ${totalShown} rekod untuk ${scope}.`;
+    }
+
+    function renderHeatmapYear(){
+      if(!heatmapGridEl) return;
+      const months = Array.from({length:12}, (_,i)=>({
+        m:i+1, label: monthLabelMY.format(new Date(currentYear, i, 1)),
+        bimbingan:0, aktiviti:0, total:0
+      }));
+
+      cacheData.forEach(r=>{
+        if(!r.tarikh || !isCurrentYear(r.tarikh)) return;
+        const idx = new Date(r.tarikh).getMonth();
+        if(r.medium_aktiviti === 'Bimbingan') months[idx].bimbingan++;
+        else if(r.medium_aktiviti === 'Aktiviti') months[idx].aktiviti++;
+        months[idx].total++;
+      });
+
+      const maxTotal = Math.max(1, ...months.map(x=>x.total));
+      heatmapGridEl.innerHTML = months.map(x=>{
+        const intensity = x.total === 0 ? 0 : x.total / maxTotal;
+        const bg = `rgba(212,175,55,${0.06 + intensity*0.28})`;
+        const border = x.total>0 ? 'border-yellow-300' : 'border-gray-200';
+        return `
+          <div class="rounded-xl p-3 border ${border}" style="background:${bg}">
+            <div class="text-sm font-medium text-gray-800">${x.label}</div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">Bimbingan: ${x.bimbingan}</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Aktiviti: ${x.aktiviti}</span>
+            </div>
+            <div class="mt-1 text-xs text-gray-600">Jumlah: ${x.total}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // PERUBAHAN UTAMA: loadActivities kini ambil semua rekod dari Supabase
+    async function loadActivities(){
+      try{
+        // Guna Supabase.from().select() untuk ambil semua rekod
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { data: allDocs, error } = await supabaseClient
+          .from('aktiviti')
+          .select('*')
+          .order('tarikh', { ascending: true }); // 'order' ganti Appwrite Query.orderAsc
         
-        let currentCode = '';
-        let currentRole = '';
+        if (error) throw error; // Pengendalian ralat Supabase
 
-        // --- SEARCH FUNCTION ---
-        async function searchSchool() {
-            const input = document.getElementById('searchInput').value;
-            const code = input ? input.toUpperCase().trim() : '';
+        // Logik Appwrite pagination (while loop) dibuang
 
-            if (!code) { showToast('Sila masukkan kod sekolah', 'error'); return; }
+        cacheData = allDocs.map(doc => ({
+          id: doc.id, // Guna 'id' (primary key) dari Supabase, BUKAN 'doc.$id'
+          tarikh: doc.tarikh,
+          tajuk: doc.tajuk,
+          masa: doc.masa,
+          tempat: doc.tempat,
+          medium_aktiviti: doc.medium_aktiviti,
+          nama_guru: doc.nama_guru,
+          impak_catatan: doc.impak_catatan,
+          tindak_susul: doc.tindak_susul
+        }));
 
-            document.getElementById('resultSection').classList.add('hidden');
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            closeForm();
+        monthIndex = buildMonthIndex(cacheData);
+        const selected = getSelectedMonth();
+        renderMonthOptions(selected);
+        renderActivities(selected);
 
-            try {
-                // 1. Fetch School
-                const { data: school, error } = await supabaseClient.from('sekolah').select('*').eq('kod_sekolah', code).maybeSingle();
-                
-                if (error) throw error;
-                if (!school) throw new Error("Kod sekolah tidak dijumpai.");
+        if(document.getElementById('tab-heatmap').classList.contains('active')) renderHeatmapYear();
+      }catch(error){
+        console.error(error);
+        Swal.fire('Ralat', error.message || 'Gagal memuatkan data aktiviti.', 'error');
+      }
+    }
 
-                // 2. Fetch Users
-                const { data: pics } = await supabaseClient.from('pengguna').select('*').eq('kod_sekolah', code);
+    monthJumpEl?.addEventListener('change', (e)=>{
+      const val = e.target.value;
+      setSelectedMonth(val);
+      renderActivities(val);
+      if(val !== '__ALL__'){
+        const sec = document.getElementById(`month-${val}`);
+        if(sec) sec.scrollIntoView({ behavior:'smooth', block:'start' });
+      } else {
+        window.scrollTo({ top:0, behavior:'smooth' });
+      }
+    });
 
-                // 3. Update UI
-                currentCode = code;
-                document.getElementById('schoolName').innerText = school.nama_sekolah;
-                document.getElementById('schoolCode').innerText = code;
+    const EDIT_PASSWORD = 'pkgag';
+    let editEnabled = sessionStorage.getItem('editEnabled') === 'true';
+    const toggleBtn = document.getElementById('toggle-edit-btn');
+    const editStateLabel = document.getElementById('edit-state-label');
+    function refreshEditStateUI(){
+      if(!toggleBtn) return;
+      editStateLabel.textContent = editEnabled ? 'Terbuka' : 'Terkunci';
+      toggleBtn.className = 'px-3 py-2 rounded-md border text-sm font-medium ' +
+        (editEnabled ? 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100'
+                     : 'bg-white hover:bg-gray-50');
+      renderActivities(getSelectedMonth());
+    }
+    toggleBtn?.addEventListener('click', async ()=>{
+      if(editEnabled){ editEnabled=false; sessionStorage.setItem('editEnabled','false'); refreshEditStateUI(); return; }
+      const { value: pass } = await Swal.fire({
+        title:'Masukkan Kata Laluan',
+        input:'password',
+        inputLabel:'Untuk membuka mod edit',
+        inputPlaceholder:'Kata laluan',
+        confirmButtonText:'Sahkan',
+        showCancelButton:true
+      });
+      if(pass===EDIT_PASSWORD){ editEnabled=true; sessionStorage.setItem('editEnabled','true'); refreshEditStateUI(); }
+      else if(pass!==undefined){ Swal.fire('Gagal','Kata laluan tidak sah.','error'); }
+    });
 
-                // Reset Data Cards
-                resetCards();
+    const sh = document.getElementById('stickyHeader');
+    const onScroll = ()=> sh.classList.toggle('scrolled', window.scrollY > 8);
+    document.addEventListener('scroll', onScroll, { passive:true });
 
-                // Fill Data Cards
-                if (pics) {
-                    pics.forEach(p => {
-                        if (p.peranan === 'GPICT') updateCard('gpict', p);
-                        else if (p.peranan === 'ADMIN_DELIMA') updateCard('delima', p);
-                        else if (p.peranan === 'PGB') document.getElementById('pgbName').innerText = p.nama_penuh;
-                        else if (p.peranan === 'GPK1') document.getElementById('gpk1Name').innerText = p.nama_penuh;
-                    });
-                }
+    function switchTab(tabName){
+      document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+      if(tabName==='list'){ loadActivities(); }
+      if(tabName==='heatmap'){ renderHeatmapYear(); }
+    }
 
-                // Setup Buttons
-                setupButton('gpict', 'GPICT', pics);
-                setupButton('delima', 'ADMIN_DELIMA', pics);
+    async function deleteActivity(id){
+      if(!editEnabled){
+        Swal.fire('Terkunci','Buka mod edit dahulu.','info');
+        return;
+      }
+      const result = await Swal.fire({
+        title:'Anda Pasti?',
+        text:'Aktiviti yang dipadam tidak boleh dikembalikan.',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonColor:'#3085d6',
+        cancelButtonColor:'#d33',
+        confirmButtonText:'Ya, padam!',
+        cancelButtonText:'Batal'
+      });
+      if(!result.isConfirmed) return;
 
-                document.getElementById('resultSection').classList.remove('hidden');
+      try{
+        // Ganti dengan Supabase delete
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
+          .from('aktiviti')
+          .delete()
+          .eq('id', id); // 'id' adalah nama kolum primary key
+          
+        if (error) throw error; // Pengendalian ralat Supabase
 
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                document.getElementById('loadingSpinner').classList.add('hidden');
-            }
-        }
+        Swal.fire('Berjaya', 'Aktiviti telah dipadam.', 'success');
+        loadActivities(); // Muat semula data
+      }catch(error){
+        console.error(error);
+        Swal.fire('Gagal', error.message || 'Aktiviti gagal dipadam.', 'error');
+      }
+    }
 
-        // --- UI HELPERS ---
-        function updateCard(prefix, data) {
-            document.getElementById(`${prefix}Name`).innerText = data.nama_penuh || 'Tiada Data';
-            // Update Phone if element exists
-            const phoneEl = document.getElementById(`${prefix}Phone`).querySelector('span');
-            if(phoneEl) phoneEl.innerText = data.no_telefon || '-';
-        }
+    const addForm = document.getElementById('add-activity-form');
+    addForm?.addEventListener('submit', async (event)=>{
+      event.preventDefault();
+      const payload = {
+        medium_aktiviti: document.getElementById('medium_aktiviti').value,
+        tajuk:           document.getElementById('tajuk').value,
+        tarikh:          document.getElementById('tarikh').value,
+        masa:            document.getElementById('masa').value,
+        tempat:          document.getElementById('tempat').value,
+        nama_guru:       document.getElementById('nama_guru').value,
+        impak_catatan:   document.getElementById('impak_catatan').value,
+        tindak_susul:    document.getElementById('tindak_susul').value
+      };
+      try{
+        // Ganti dengan Supabase insert
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
+          .from('aktiviti')
+          .insert([payload]); // Supabase menjangkakan array of objects
+          
+        if (error) throw error; // Pengendalian ralat Supabase
 
-        function resetCards() {
-            ['gpict', 'delima'].forEach(p => {
-                document.getElementById(`${p}Name`).innerText = 'Tiada Data';
-                const phoneEl = document.getElementById(`${p}Phone`).querySelector('span');
-                if(phoneEl) phoneEl.innerText = '-';
-            });
-            ['pgbName', 'gpk1Name'].forEach(id => document.getElementById(id).innerText = '-');
-        }
+        Swal.fire('Berjaya', 'Aktiviti baharu telah ditambah.', 'success');
+        addForm.reset();
+        loadActivities(); // Muat semula data
+      }catch(error){
+        console.error(error);
+        Swal.fire('Gagal', error.message || 'Sila pastikan semua medan diisi dengan betul.', 'error');
+      }
+    });
 
-        function setupButton(prefix, role, pics) {
-            const user = pics ? pics.find(p => p.peranan === role) : null;
-            const container = document.getElementById(`${prefix}ActionArea`);
-            const color = prefix === 'gpict' ? 'blue' : 'purple';
+    const editModal = document.getElementById('edit-modal');
+    function openEditModal(activity){
+      if(!editEnabled){ Swal.fire('Terkunci','Buka mod edit dahulu.','info'); return; }
+      document.getElementById('edit-activity-id').value = activity.id;
+      document.getElementById('edit-medium_aktiviti').value = activity.medium_aktiviti || '';
+      document.getElementById('edit-tajuk').value = activity.tajuk || '';
+      document.getElementById('edit-tarikh').value = activity.tarikh ? String(activity.tarikh).slice(0,10) : '';
+      document.getElementById('edit-masa').value = activity.masa || '';
+      document.getElementById('edit-tempat').value = activity.tempat || '';
+      document.getElementById('edit-nama_guru').value = activity.nama_guru || '';
+      document.getElementById('edit-impak_catatan').value = activity.impak_catatan || '';
+      document.getElementById('edit-tindak_susul').value = activity.tindak_susul || '';
+      editModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(){
+      editModal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('close-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('save-changes-btn')?.addEventListener('click', async ()=>{
+      if(!editEnabled){ Swal.fire('Terkunci','Buka mod edit dahulu.','info'); return; }
+      const id = document.getElementById('edit-activity-id').value;
+      const updated = {
+        medium_aktiviti: document.getElementById('edit-medium_aktiviti').value,
+        tajuk:           document.getElementById('edit-tajuk').value,
+        tarikh:          document.getElementById('edit-tarikh').value,
+        masa:            document.getElementById('edit-masa').value,
+        tempat:          document.getElementById('edit-tempat').value,
+        nama_guru:       document.getElementById('edit-nama_guru').value,
+        impak_catatan:   document.getElementById('edit-impak_catatan').value,
+        tindak_susul:    document.getElementById('edit-tindak_susul').value
+      };
+      try{
+        // Ganti dengan Supabase update
+        // **PEMBETULAN:** Guna 'supabaseClient'
+        const { error } = await supabaseClient
+          .from('aktiviti')
+          .update(updated)
+          .eq('id', id); // 'id' adalah nama kolum primary key
 
-            if (user) {
-                container.innerHTML = `
-                    <button onclick="openForm('${role}')" class="w-full py-3 rounded-xl bg-${color}-600 text-white font-bold hover:bg-${color}-700 shadow-md shadow-${color}-200 transition flex justify-center items-center gap-2">
-                        <span>Tetapkan Temujanji</span>
-                    </button>
-                    <div class="mt-3 flex justify-center">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-100">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> BERDAFTAR
-                        </span>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <button disabled class="w-full py-3 rounded-xl bg-slate-50 text-slate-400 font-bold border border-slate-200 cursor-not-allowed flex justify-center items-center gap-2">
-                        <span>Belum Mendaftar</span>
-                    </button>
-                    <div class="mt-3 flex justify-center">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-400 border border-red-100">
-                            <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> OFFLINE
-                        </span>
-                    </div>
-                `;
-            }
-        }
+        if (error) throw error; // Pengendalian ralat Supabase
 
-        // --- APPOINTMENT LOGIC ---
-        function openForm(role) {
-            currentRole = role;
-            document.getElementById('targetRoleDisplay').innerText = role === 'GPICT' ? 'Guru Penyelaras ICT' : 'Admin DELIMa';
-            document.getElementById('appointmentForm').classList.remove('hidden');
-            setTimeout(() => document.getElementById('appointmentForm').scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        }
+        Swal.fire('Berjaya', 'Aktiviti telah dikemas kini.', 'success');
+        closeModal();
+        // renderActivities(getSelectedMonth()); // loadActivities() di bawah sudah memanggil ini
+        loadActivities(); // Muat semula semua data
+      }catch(error){
+        console.error(error);
+        Swal.fire('Gagal', error.message || 'Aktiviti gagal dikemas kini.', 'error');
+      }
+    });
 
-        function closeForm() {
-            document.getElementById('appointmentForm').classList.add('hidden');
-        }
+    document.getElementById('edit-modal')?.addEventListener('click', (e)=>{
+      if(e.target.id==='edit-modal') closeModal();
+    });
 
-        async function submitForm() {
-            const date = document.getElementById('inpDate').value;
-            const time = document.getElementById('inpTime').value;
-            const purpose = document.getElementById('inpPurpose').value;
-
-            if (!date || !time || !purpose) { showToast('Sila lengkapkan semua maklumat.', 'error'); return; }
-
-            const btn = document.getElementById('btnSend');
-            const oldHtml = btn.innerHTML;
-            btn.innerHTML = '<div class="loader ease-linear rounded-full border-2 border-t-2 border-white h-5 w-5"></div>';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${FUNCTION_URL}?action=send_appointment`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        kod_sekolah: currentCode,
-                        target_role: currentRole,
-                        tarikh: date,
-                        masa: time,
-                        tujuan: purpose
-                    })
-                });
-
-                const json = await res.json();
-
-                if (!res.ok) throw new Error(json.error || 'Gagal menghantar notifikasi.');
-
-                showToast('✅ Notifikasi berjaya dihantar!', 'success');
-                closeForm();
-                // Clear Inputs
-                document.getElementById('inpDate').value = '';
-                document.getElementById('inpTime').value = '';
-                document.getElementById('inpPurpose').value = '';
-
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                btn.innerHTML = oldHtml;
-                btn.disabled = false;
-            }
-        }
-
-        // --- TOAST NOTIFICATION ---
-        function showToast(msg, type) {
-            const container = document.getElementById('toast-container');
-            const div = document.createElement('div');
-            const bg = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            const icon = type === 'success' ? 
-                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : 
-                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-
-            div.className = `toast ${bg} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 pointer-events-auto font-bold text-sm min-w-[300px]`;
-            div.innerHTML = `${icon} <span>${msg}</span>`;
-
-            container.appendChild(div);
-            
-            requestAnimationFrame(() => div.classList.add('show'));
-            
-            setTimeout(() => {
-                div.classList.remove('show');
-                setTimeout(() => div.remove(), 300);
-            }, 4000);
-        }
-    </script>
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // await ensureAnonSession(); // Dibuang, tidak perlu untuk Supabase
+      setSelectedMonth(monthKey(new Date()));
+      await loadActivities();
+      refreshEditStateUI();
+      onScroll();
+    });
+  </script>
 </body>
 </html>
